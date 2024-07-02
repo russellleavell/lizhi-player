@@ -12,13 +12,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (match) {
             const audioId = match[2];
             const date = new Date(dateString);
-            const adjustedDate = new Date(date);
-            adjustedDate.setDate(adjustedDate.getDate() - 1);
+            const previousDate = new Date(date);
+            previousDate.setDate(previousDate.getDate() - 1);
 
             return {
                 audioId: audioId,
-                adjustedDate: formatDate(adjustedDate),
-                originalDate: formatDate(date)
+                originalDate: formatDate(date),
+                previousDate: formatDate(previousDate)
             };
         }
         return null;
@@ -44,11 +44,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getAudioUrl(audioInfo) {
-        return tryAudioUrl(audioInfo.audioId, audioInfo.adjustedDate)
-            .catch(() => tryAudioUrl(audioInfo.audioId, audioInfo.originalDate))
+        return tryAudioUrl(audioInfo.audioId, audioInfo.originalDate)
+            .catch(() => tryAudioUrl(audioInfo.audioId, audioInfo.previousDate))
             .catch(() => {
-                console.log("Both URLs failed, using adjusted date as fallback");
-                return `https://cdn5.lizhi.fm/audio/${audioInfo.adjustedDate}/${audioInfo.audioId}_hd.mp3`;
+                console.log("Both URLs failed, using original date as fallback");
+                return `https://cdn5.lizhi.fm/audio/${audioInfo.originalDate}/${audioInfo.audioId}_hd.mp3`;
             });
     }
 
