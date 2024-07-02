@@ -1,25 +1,24 @@
 document.addEventListener('DOMContentLoaded', () => {
     const urlInput = document.getElementById('urlInput');
+    const dateInput = document.getElementById('dateInput');
     const playButton = document.getElementById('playButton');
     const downloadButton = document.getElementById('downloadButton');
     const audioPlayer = document.getElementById('audioPlayer');
     const statusDiv = document.createElement('div');
     document.body.appendChild(statusDiv);
 
-    function getAudioInfo(url) {
+    function getAudioInfo(url, dateString) {
         const match = url.match(/\/(\d+)\/(\d+)/);
         if (match) {
             const audioId = match[2];
-            // Note: In a real-world scenario, you'd need to fetch the actual date from the page
-            // This is a simplified version
-            const currentDate = new Date();
-            const adjustedDate = new Date(currentDate);
+            const date = new Date(dateString);
+            const adjustedDate = new Date(date);
             adjustedDate.setDate(adjustedDate.getDate() - 1);
 
             return {
                 audioId: audioId,
                 adjustedDate: formatDate(adjustedDate),
-                originalDate: formatDate(currentDate)
+                originalDate: formatDate(date)
             };
         }
         return null;
@@ -54,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     playButton.addEventListener('click', () => {
-        const audioInfo = getAudioInfo(urlInput.value);
+        const audioInfo = getAudioInfo(urlInput.value, dateInput.value);
         if (audioInfo) {
             statusDiv.textContent = "Fetching audio...";
             getAudioUrl(audioInfo)
@@ -66,12 +65,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     statusDiv.textContent = `Error: ${error}`;
                 });
         } else {
-            statusDiv.textContent = 'Invalid URL';
+            statusDiv.textContent = 'Invalid URL or date';
         }
     });
 
     downloadButton.addEventListener('click', () => {
-        const audioInfo = getAudioInfo(urlInput.value);
+        const audioInfo = getAudioInfo(urlInput.value, dateInput.value);
         if (audioInfo) {
             statusDiv.textContent = "Preparing download...";
             getAudioUrl(audioInfo)
@@ -88,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     statusDiv.textContent = `Error: ${error}`;
                 });
         } else {
-            statusDiv.textContent = 'Invalid URL';
+            statusDiv.textContent = 'Invalid URL or date';
         }
     });
 });
