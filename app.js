@@ -29,37 +29,47 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function tryAudioUrl(audioId, date) {
-        return new Promise((resolve, reject) => {
-            const audioUrl = `https://cdn5.lizhi.fm/audio/${date}/${audioId}_hd.mp3`;
-            fetch(audioUrl, { method: 'HEAD' })
-                .then(response => {
-                    if (response.ok) {
-                        resolve(audioUrl);
-                    } else {
-                        reject(`Failed to fetch ${audioUrl}`);
-                    }
-                })
-                .catch(error => reject(`Error fetching ${audioUrl}: ${error}`));
-        });
+        const audioUrl = `https://cdn5.lizhi.fm/audio/${date}/${audioId}_hd.mp3`;
+        return fetch(audioUrl, { method: 'HEAD' })
+            .then(response => {
+                if (response.ok) {
+                    return audioUrl;
+                } else {
+                    throw new Error(`Failed to fetch ${audioUrl}`);
+                }
+            });
     }
 
     function getAudioUrl(audioInfo) {
         return tryAudioUrl(audioInfo.audioId, audioInfo.originalDate)
-            .catch(() => tryAudioUrl(audioInfo.audioId, audioInfo.previousDate))
             .catch(() => {
-                console.log("Both URLs failed, using original date as fallback");
+                console.log("Original date failed, trying previous date");
+                return tryAudioUrl(audioInfo.audioId, audioInfo.previousDate);
+            })
+            .catch(() => {
+                console.log("Both dates failed, using original date as fallback");
                 return `https://cdn5.lizhi.fm/audio/${audioInfo.originalDate}/${audioInfo.audioId}_hd.mp3`;
             });
     }
 
-    playButton.addEventListener('click', () => {
+    function handleAudioAction(action) {
         const audioInfo = getAudioInfo(urlInput.value, dateInput.value);
         if (audioInfo) {
-            statusDiv.textContent = "Fetching audio...";
+            statusDiv.textContent = `Fetching audio... (Trying original date: ${audioInfo.originalDate})`;
             getAudioUrl(audioInfo)
                 .then(url => {
-                    audioPlayer.innerHTML = `<audio controls src="${url}"></audio>`;
-                    statusDiv.textContent = "Audio loaded successfully.";
+                    statusDiv.textContent = `Using URL: ${url}`;
+                    if (action === 'play') {
+                        audioPlayer.innerHTML = `<audio controls src="${url}"></audio>`;
+                    } else if (action === 'download') {
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `audio_${audioInfo.audioId}.mp3`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        statusDiv.textContent += " Download started.";
+                    }
                 })
                 .catch(error => {
                     statusDiv.textContent = `Error: ${error}`;
@@ -67,29 +77,10 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             statusDiv.textContent = 'Invalid URL or date';
         }
-    });
+    }
 
-    downloadButton.addEventListener('click', () => {
-        const audioInfo = getAudioInfo(urlInput.value, dateInput.value);
-        if (audioInfo) {
-            statusDiv.textContent = "Preparing download...";
-            getAudioUrl(audioInfo)
-                .then(url => {
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `audio_${audioInfo.audioId}.mp3`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    statusDiv.textContent = "Download started.";
-                })
-                .catch(error => {
-                    statusDiv.textContent = `Error: ${error}`;
-                });
-        } else {
-            statusDiv.textContent = 'Invalid URL or date';
-        }
-    });
+    playButton.addEventListener('click', () => handleAudioAction('play'));
+    downloadButton.addEventListener('click', () => handleAudioAction('download'));
 });
 
 if ('serviceWorker' in navigator) {
